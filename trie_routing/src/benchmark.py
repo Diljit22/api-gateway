@@ -1,75 +1,83 @@
 import time
+import statistics
 from radix_trie import RadixRouter
 
-# Note: more of a "fake" benchmark by isolating to routing
-# alg its essentially comparison of two search which
-# we know complexity (and constants).
+"""
+Benchmark: Dict prefix scan vs Radix Trie lookup.
 
-# Generate routes
-
-NUM_ROUTES = 1_000_000
-print(f"Generating {NUM_ROUTES} dummy routes to simulate a massive API Gateway...")
-
-dict_routes = {}
-trie_router = RadixRouter()
-
-# Populate with dummy data
-for i in range(NUM_ROUTES):
-    path = f"/api/v1/dummy_service_{i}/endpoint"
-    backend = f"http://localhost:8001/dummy_{i}"
-    
-    dict_routes[path] = backend
-    trie_router.insert(path, backend)
-
-# Insert the route we are actually going to look for
-target_prefix = "/users"
-dict_routes[target_prefix] = "http://localhost:8001"
-trie_router.insert(target_prefix, "http://localhost:8001")
-
-target_path = "/users/profile/123"
-RUNS = 20
-
-print(f"Target Path: {target_path}")
-print(f"Number of runs: {RUNS}\n")
-print("Benchmarking... please wait...\n")
-
-# Bench Pass-Through
-
-pass_through_times =[]
-
-for _ in range(RUNS):
-    start = time.perf_counter()
-    
-    matched_backend = None
-    matched_prefix = ""
-    for prefix in sorted(dict_routes.keys(), key=len, reverse=True):
-        if target_path.startswith(prefix):
-            matched_backend = dict_routes[prefix]
-            matched_prefix = prefix
-            break
-            
-    end = time.perf_counter()
-    pass_through_times.append(end - start)
-
-avg_dict_time = sum(pass_through_times) / RUNS
-
-# Bench Trie Routing
-trie_times =[]
-
-for _ in range(RUNS):
-    start = time.perf_counter()
-    
-    matched_backend, remaining = trie_router.search(target_path)
-    
-    end = time.perf_counter()
-    trie_times.append(end - start)
-
-avg_trie_time = sum(trie_times) / RUNS
+NB: Isolates the routing algorithm - no network, no HTTP.
+"""
+def bench(fn, runs: int, warmup: int = 50) -> list[float]:
+    """Run fn with warmup, return list of elapsed times."""
+    for _ in range(warmup):
+        fn()
+    times = []
+    for _ in range(runs):
+        start = time.perf_counter()
+        fn()
+        times.append(time.perf_counter() - start)
+    return times
 
 
-print("=== RESULTS ===")
-print(f"Pass-Through (Dict) Avg Time : {avg_dict_time:.6f} seconds per request")
-print(f"Radix Trie Avg Time          : {avg_trie_time:.6f} seconds per request")
+def report(label: str, times: list[float]):
+    avg = statistics.mean(times)
+    sd = statistics.stdev(times) if len(times) > 1 else 0.0
+    p50 = sorted(times)[len(times) // 2]
+    p99 = sorted(times)[int(len(times) * 0.99)]
+    print(f"   {label}")
+    print(f"     mean: {avg*1_000_000:.1f} µs   std: {sd*1_000_000:.1f} µs   p50: {p50*1_000_000:.1f} µs   p99: {p99*1_000_000:.1f} µs")
 
-speedup = avg_dict_time / avg_trie_time if avg_trie_time > 0 else float('inf')
-print(f"\nbThe Radix Trie is {speedup:,.0f}x faster.")
+
+# Setup
+
+ROUTE_COUNTS = [100, 10_000, 1_000_000]
+RUNS = 500
+TARGET_PATH = "/users/profile/123"
+
+print(f"Benchmark: Dict Scan vs Radix Trie")
+print(f"Target path: {TARGET_PATH}")
+print(f"Runs per test: {RUNS} (+ 50 warmup)\n")
+
+for num_routes in ROUTE_COUNTS:
+    print(f"{'='*60}")
+    print(f"  {num_routes:,} routes registered")
+    print(f"{'='*60}\n")
+
+    # Build the dict and trie with identical routes
+    dict_routes = {}
+    trie_router = RadixRouter()
+
+    for i in range(num_routes):
+        path = f"/api/v1/svc_{i}/endpoint"
+        backend = f"http://localhost:9000"
+        dict_routes[path] = backend
+        trie_router.insert(path, backend)
+
+    # Insert the route we're searching for
+    dict_routes["/users"] = "http://localhost:8001"
+    trie_router.insert("/users", "http://localhost:8001")
+
+    # Pre-sort the keys once
+    sorted_prefixes = sorted(dict_routes.keys(), key=len, reverse=True)
+
+    # Dict scan
+    def dict_lookup():
+        for prefix in sorted_prefixes:
+            if TARGET_PATH.startswith(prefix):
+                return dict_routes[prefix]
+        return None
+
+    # Trie lookup
+    def trie_lookup():
+        return trie_router.search(TARGET_PATH)
+
+    dict_times = bench(dict_lookup, RUNS)
+    trie_times = bench(trie_lookup, RUNS)
+
+    report("Dict scan:", dict_times)
+    report("Radix Trie:", trie_times)
+
+    avg_dict = statistics.mean(dict_times)
+    avg_trie = statistics.mean(trie_times)
+    speedup = avg_dict / avg_trie if avg_trie > 0 else float('inf')
+    print(f"\n   Trie is {speedup:,.0f}x faster at {num_routes:,} routes.\n")
