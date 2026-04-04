@@ -7,8 +7,7 @@ Two dummy backends so we can test the gateway.
 
 Each one replies with its name and the path it saw.  
 
-## How to Demo
+## How to Run
 
 1. Use `make services` to start both backends
-2. Launch `demo.http` and send requests
-3. Stop services via `make services-stop`
+2. Stop services via `make services-stop`

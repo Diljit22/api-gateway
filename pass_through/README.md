@@ -10,10 +10,12 @@ Super simple:
 
 Nothing fancy, just enough to get the gateway working end-to-end.
 
-## How to run
+## How to Run
 
-1. Start the two backends and in a third terminal launch the gateway.
-2. Open demo.http and click around
+1. Start backends + gateway on :8080 with `make pass-through`
+2. Open `pass_through/demo.http` and click around.
+3. Kill gateway via `make pass-through-stop`.
+4. Kill everything with `make stop-all`
 
 ## architecture
 

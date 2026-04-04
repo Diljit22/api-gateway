@@ -28,8 +28,11 @@ Instead of wrapping the Trie in complex locks (which slows down reads), gateways
 
 ## How to run
 
-1. Start the two backends and in a third terminal launch the gateway.
-2. Open demo.http and click around
+1. Start backends + gateway on :8080 with `make trie`
+2. Open `trie_routing/demo.http` and click around.
+3. Run `make trie-bench` for the dict scan vs trie lookup benchmark (no servers needed).
+4. Kill gateway via `make trie-stop`.
+5. Kill everything with `make stop-all`.
 
 ## Architecture Update
 
