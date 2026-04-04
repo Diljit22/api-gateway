@@ -27,3 +27,15 @@ Hopefully the weekly overviews will highlight architectural choices, trade-offs,
 | pass_through     | basic dict routing | done   |
 | trie_routing     | radix-trie router  | done   |
 | load_balancing   | server router      | done   |
+
+## Makefile
+
+(install wsl if on windows machine)
+
+The workflow for each phase:
+
+make pass-through: starts backends + gateway
+make trie: same but with trie router
+make lb: starts all 6 backends + gateway
+make lb-chaos: fully automated chaos demo
+make stop-all: cleans up everything
