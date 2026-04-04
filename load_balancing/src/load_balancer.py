@@ -117,8 +117,8 @@ class ConsistentHashLB(LoadBalancer):
         server = self.ring.get_server(request_key or "default")
         return server
 
-    def on_request_start(self, backend: str):
+    def on_request_start(self, _backend: str):
         pass
 
-    def on_request_end(self, backend: str):
+    def on_request_end(self, _backend: str):
         pass
