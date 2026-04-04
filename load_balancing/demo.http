@@ -1,0 +1,36 @@
+### Test Users (GET — load balancer picks one of 8001/8003/8005)
+GET http://localhost:8080/users/profile/123
+
+### Test Users (see that query params are forwarded)
+GET http://localhost:8080/users/search?role=admin&active=true
+
+### Test Orders (see that body + headers are forwarded)
+POST http://localhost:8080/orders/checkout
+Content-Type: application/json
+X-My-Custom-Header: ToyGatewayIsAwesome
+
+{
+    "item": "book",
+    "quantity": 1
+}
+
+### Test Orders (DELETE method)
+DELETE http://localhost:8080/orders/cancel/987
+
+### Test 404 (route not registered)
+GET http://localhost:8080/payments/status
+
+### Admin: check which backends are healthy
+GET http://localhost:8080/_admin/status
+
+### Admin: kill a backend
+POST http://localhost:8080/_admin/down/8003
+
+### Admin: see the damage
+GET http://localhost:8080/_admin/status
+
+### Admin: bring it back
+POST http://localhost:8080/_admin/up/8003
+
+### Admin: confirm recovery
+GET http://localhost:8080/_admin/status
