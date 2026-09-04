@@ -56,6 +56,6 @@ make stop-all          # kill all running processes
 | trie_routing     | radix-trie router  | done   |
 | load_balancing   | const hash + vnode | done   |
 | req_chanelling   | bulkhead + single  | done   |
-| cache_layer      | .............      | todo   |
+| cache_layer      | in-memory TTL      | done   |
 | authentication   | .............      | todo   |
 | rate_limiting    | .............      | todo   |
