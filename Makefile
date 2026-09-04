@@ -161,7 +161,40 @@ rc-bench:
 	@echo "Running request channeler benchmark..."
 	@cd req_chanelling/src && python benchmark.py
 
+### Caching Layer ###
+
+cache-backends:
+	@echo "Starting 6 backends for Caching..."
+	@cd cache_layer/src && python backend.py 8001 users &
+	@cd cache_layer/src && python backend.py 8003 users &
+	@cd cache_layer/src && python backend.py 8005 users &
+	@cd cache_layer/src && python backend.py 8002 orders &
+	@cd cache_layer/src && python backend.py 8004 orders &
+	@cd cache_layer/src && python backend.py 8006 orders &
+	@sleep 2
+	@echo "All 6 backends ready."
+
+cache-gateway:
+	@echo "Starting caching-enabled gateway :8080 ..."
+	@cd cache_layer/src && python api_gateway.py
+
+cache: cache-backends
+	@echo "Starting caching-enabled gateway :8080 ..."
+	@cd cache_layer/src && python api_gateway.py
+
+cache-backends-stop:
+	@-pkill -f "cache_layer/src/backend.py" 2>/dev/null || true
+
+cache-gateway-stop:
+	@-pkill -f "cache_layer/src/api_gateway.py" 2>/dev/null || true
+
+cache-stop: cache-backends-stop cache-gateway-stop
+
+cache-bench:
+	@echo "Running cache benchmark..."
+	@cd cache_layer/src && python benchmark.py
+
 ###  Nuke everything ###
 
-stop-all: services-stop pass-through-stop trie-stop lb-stop rc-stop
+stop-all: services-stop pass-through-stop trie-stop lb-stop rc-stop cache-stop
 	@echo "All processes stopped."

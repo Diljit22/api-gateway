@@ -1,0 +1,8 @@
+### 1. First request - Cache MISS (takes ~1 second)
+GET http://localhost:8080/users/profile/10
+
+### 2. Second request - Cache HIT (returns instantly)
+GET http://localhost:8080/users/profile/10
+
+### 3. Verify Admin Status (Shows cached items counter)
+GET http://localhost:8080/_admin/status
