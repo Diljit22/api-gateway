@@ -1,0 +1,26 @@
+# --- CONFIGURATION ---
+# Copy the live tokens printed in your gateway terminal and paste them below:
+@user_token = PASTE_LIVE_USER_TOKEN_HERE
+@admin_token = PASTE_LIVE_ADMIN_TOKEN_HERE
+
+### 1. Request public endpoint anonymously (Should succeed: /users requires no roles)
+GET http://localhost:8080/users/profile/1
+
+### 2. Request protected orders endpoint anonymously (Should fail: 403 Forbidden)
+GET http://localhost:8080/orders/checkout
+
+### 3. Request protected orders endpoint with invalid token (Should fail: 403 Forbidden)
+GET http://localhost:8080/orders/checkout
+Authorization: Bearer invalid_token_xyz
+
+### 4. Request protected orders endpoint with valid user token (Should succeed: 200 OK)
+GET http://localhost:8080/orders/checkout
+Authorization: Bearer {{user_token}}
+
+### 5. Request admin status with standard user token (Should fail: 403 Forbidden - Role mismatch)
+GET http://localhost:8080/_admin/status
+Authorization: Bearer {{user_token}}
+
+### 6. Request admin status with admin token (Should succeed: 200 OK)
+GET http://localhost:8080/_admin/status
+Authorization: Bearer {{admin_token}}
