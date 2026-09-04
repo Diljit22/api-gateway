@@ -6,6 +6,7 @@
        rc rc-backends rc-backends-stop rc-gateway rc-gateway-stop rc-stop rc-bench \
        cache cache-backends cache-backends-stop cache-gateway cache-gateway-stop cache-stop cache-bench \
        auth auth-backends auth-backends-stop auth-gateway auth-gateway-stop auth-stop auth-bench \
+       limit limit-backends limit-backends-stop limit-gateway limit-gateway-stop limit-stop limit-bench \
        stop-all
 
 ###  Help ###
@@ -59,6 +60,13 @@ help:
 	@echo "    make auth-gateway         start gateway only"
 	@echo "    make auth-stop            kill everything"
 	@echo "    make auth-bench           run cryptographic JWT validation benchmark"
+	@echo ""
+	@echo "  Rate Limiting phase:"
+	@echo "    make limit                start 6 backends + rate-limited gateway (all-in-one)"
+	@echo "    make limit-backends       start 6 backends only"
+	@echo "    make limit-gateway        start gateway only"
+	@echo "    make limit-stop           kill everything"
+	@echo "    make limit-bench          run token bucket performance benchmark"
 	@echo ""
 	@echo "  Cleanup:"
 	@echo "    make stop-all             kill all background processes"
@@ -243,7 +251,40 @@ auth-bench:
 	@echo "Running auth benchmark..."
 	@cd authentication/src && python benchmark.py
 
+### Rate Limiting Layer ###
+
+limit-backends:
+	@echo "Starting 6 backends for Rate Limiting..."
+	@cd rate_limiting/src && python backend.py 8001 users &
+	@cd rate_limiting/src && python backend.py 8003 users &
+	@cd rate_limiting/src && python backend.py 8005 users &
+	@cd rate_limiting/src && python backend.py 8002 orders &
+	@cd rate_limiting/src && python backend.py 8004 orders &
+	@cd rate_limiting/src && python backend.py 8006 orders &
+	@sleep 2
+	@echo "All 6 backends ready."
+
+limit-gateway:
+	@echo "Starting rate-limit-enabled gateway :8080 ..."
+	@cd rate_limiting/src && python api_gateway.py
+
+limit: limit-backends
+	@echo "Starting rate-limit-enabled gateway :8080 ..."
+	@cd rate_limiting/src && python api_gateway.py
+
+limit-backends-stop:
+	@-pkill -f "rate_limiting/src/backend.py" 2>/dev/null || true
+
+limit-gateway-stop:
+	@-pkill -f "rate_limiting/src/api_gateway.py" 2>/dev/null || true
+
+limit-stop: limit-backends-stop limit-gateway-stop
+
+limit-bench:
+	@echo "Running rate limiter benchmark..."
+	@cd rate_limiting/src && python benchmark.py
+
 ###  Nuke everything ###
 
-stop-all: services-stop pass-through-stop trie-stop lb-stop rc-stop cache-stop auth-stop
+stop-all: services-stop pass-through-stop trie-stop lb-stop rc-stop cache-stop auth-stop limit-stop
 	@echo "All processes stopped."
