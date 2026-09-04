@@ -4,6 +4,8 @@
        trie trie-stop trie-bench \
        lb lb-backends lb-backends-stop lb-gateway lb-gateway-stop lb-stop lb-bench lb-chaos \
        rc rc-backends rc-backends-stop rc-gateway rc-gateway-stop rc-stop rc-bench \
+       cache cache-backends cache-backends-stop cache-gateway cache-gateway-stop cache-stop cache-bench \
+       auth auth-backends auth-backends-stop auth-gateway auth-gateway-stop auth-stop auth-bench \
        stop-all
 
 ###  Help ###
@@ -43,6 +45,20 @@ help:
 	@echo "    make rc-gateway           start gateway only"
 	@echo "    make rc-stop              kill everything"
 	@echo "    make rc-bench             run the coalescing and bulkhead benchmark"
+	@echo ""
+	@echo "  Caching Layer phase:"
+	@echo "    make cache                start 6 backends + cache enabled gateway"
+	@echo "    make cache-backends       start 6 backends"
+	@echo "    make cache-gateway        start gateway only"
+	@echo "    make cache-stop           kill everything"
+	@echo "    make cache-bench          run cache hit vs miss latency benchmark"
+	@echo ""
+	@echo "  Authentication phase:"
+	@echo "    make auth                 start 6 backends + JWT auth gateway"
+	@echo "    make auth-backends        start 6 backends"
+	@echo "    make auth-gateway         start gateway only"
+	@echo "    make auth-stop            kill everything"
+	@echo "    make auth-bench           run cryptographic JWT validation benchmark"
 	@echo ""
 	@echo "  Cleanup:"
 	@echo "    make stop-all             kill all background processes"
@@ -194,7 +210,40 @@ cache-bench:
 	@echo "Running cache benchmark..."
 	@cd cache_layer/src && python benchmark.py
 
+### Authentication Layer ###
+
+auth-backends:
+	@echo "Starting 6 backends for Authentication..."
+	@cd authentication/src && python backend.py 8001 users &
+	@cd authentication/src && python backend.py 8003 users &
+	@cd authentication/src && python backend.py 8005 users &
+	@cd authentication/src && python backend.py 8002 orders &
+	@cd authentication/src && python backend.py 8004 orders &
+	@cd authentication/src && python backend.py 8006 orders &
+	@sleep 2
+	@echo "All 6 backends ready."
+
+auth-gateway:
+	@echo "Starting auth-enabled gateway :8080 ..."
+	@cd authentication/src && python api_gateway.py
+
+auth: auth-backends
+	@echo "Starting auth-enabled gateway :8080 ..."
+	@cd authentication/src && python api_gateway.py
+
+auth-backends-stop:
+	@-pkill -f "authentication/src/backend.py" 2>/dev/null || true
+
+auth-gateway-stop:
+	@-pkill -f "authentication/src/api_gateway.py" 2>/dev/null || true
+
+auth-stop: auth-backends-stop auth-gateway-stop
+
+auth-bench:
+	@echo "Running auth benchmark..."
+	@cd authentication/src && python benchmark.py
+
 ###  Nuke everything ###
 
-stop-all: services-stop pass-through-stop trie-stop lb-stop rc-stop cache-stop
+stop-all: services-stop pass-through-stop trie-stop lb-stop rc-stop cache-stop auth-stop
 	@echo "All processes stopped."
