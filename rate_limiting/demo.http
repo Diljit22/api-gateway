@@ -1,0 +1,18 @@
+# --- CONFIGURATION ---
+# Copy the live tokens printed in your gateway terminal and paste them below:
+@user_token = PASTE_LIVE_USER_TOKEN_HERE
+@admin_token = PASTE_LIVE_ADMIN_TOKEN_HERE
+
+### 1. Request public endpoint anonymously (Tier: anonymous - Capacity: 5)
+# Send this rapidly 6 times in a row to hit 429 Too Many Requests
+GET http://localhost:8080/users/profile/1
+
+### 2. Request as a Basic User (Tier: basic - Capacity: 10)
+# Send this rapidly 11 times to hit 429 Too Many Requests
+GET http://localhost:8080/users/profile/1
+Authorization: Bearer {{user_token}}
+
+### 3. Request as a Premium User (Tier: premium - Capacity: 30)
+# Send this rapidly 31 times to hit 429
+GET http://localhost:8080/users/profile/1
+Authorization: Bearer {{admin_token}}
