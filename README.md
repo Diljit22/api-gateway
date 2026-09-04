@@ -58,4 +58,4 @@ make stop-all          # kill all running processes
 | req_chanelling   | bulkhead + single  | done   |
 | cache_layer      | in-memory TTL      | done   |
 | authentication   | edge auth + RBAC   | done   |
-| rate_limiting    | .............      | todo   |
+| rate_limiting    | token bucket limit | done   |
