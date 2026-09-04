@@ -57,5 +57,5 @@ make stop-all          # kill all running processes
 | load_balancing   | const hash + vnode | done   |
 | req_chanelling   | bulkhead + single  | done   |
 | cache_layer      | in-memory TTL      | done   |
-| authentication   | .............      | todo   |
+| authentication   | edge auth + RBAC   | done   |
 | rate_limiting    | .............      | todo   |
