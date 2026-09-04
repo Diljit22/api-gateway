@@ -3,6 +3,7 @@
        pass-through pass-through-stop \
        trie trie-stop trie-bench \
        lb lb-backends lb-backends-stop lb-gateway lb-gateway-stop lb-stop lb-bench lb-chaos \
+       rc rc-backends rc-backends-stop rc-gateway rc-gateway-stop rc-stop rc-bench \
        stop-all
 
 ###  Help ###
@@ -35,6 +36,13 @@ help:
 	@echo "    make lb-stop              kill everything"
 	@echo "    make lb-bench             run algorithm benchmark (no servers needed)"
 	@echo "    make lb-chaos             run chaos demo (starts its own servers)"
+	@echo ""
+	@echo "  Request Channeling phase:"
+	@echo "    make rc                   start 6 backends + request channeled gateway"
+	@echo "    make rc-backends          start 6 backends (with 1s delay)"
+	@echo "    make rc-gateway           start gateway only"
+	@echo "    make rc-stop              kill everything"
+	@echo "    make rc-bench             run the coalescing and bulkhead benchmark"
 	@echo ""
 	@echo "  Cleanup:"
 	@echo "    make stop-all             kill all background processes"
@@ -120,7 +128,40 @@ lb-chaos:
 	@echo "Running chaos demo (starts its own servers)..."
 	@cd load_balancing/src && python chaos_demo.py
 
+### Request Channeling ###
+
+rc-backends:
+	@echo "Starting 6 backends for Request Channeling..."
+	@cd req_chanelling/src && python backend.py 8001 users &
+	@cd req_chanelling/src && python backend.py 8003 users &
+	@cd req_chanelling/src && python backend.py 8005 users &
+	@cd req_chanelling/src && python backend.py 8002 orders &
+	@cd req_chanelling/src && python backend.py 8004 orders &
+	@cd req_chanelling/src && python backend.py 8006 orders &
+	@sleep 2
+	@echo "All 6 backends ready."
+
+rc-gateway:
+	@echo "Starting request-channeled gateway :8080 ..."
+	@cd req_chanelling/src && python api_gateway.py
+
+rc: rc-backends
+	@echo "Starting request-channeled gateway :8080 ..."
+	@cd req_chanelling/src && python api_gateway.py
+
+rc-backends-stop:
+	@-pkill -f "req_chanelling/src/backend.py" 2>/dev/null || true
+
+rc-gateway-stop:
+	@-pkill -f "req_chanelling/src/api_gateway.py" 2>/dev/null || true
+
+rc-stop: rc-backends-stop rc-gateway-stop
+
+rc-bench:
+	@echo "Running request channeler benchmark..."
+	@cd req_chanelling/src && python benchmark.py
+
 ###  Nuke everything ###
 
-stop-all: services-stop pass-through-stop trie-stop lb-stop
+stop-all: services-stop pass-through-stop trie-stop lb-stop rc-stop
 	@echo "All processes stopped."
