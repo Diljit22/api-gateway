@@ -1,0 +1,5 @@
+### 1. Request public path (Backend returns response in ~1.0 second with a Random ID)
+GET http://localhost:8080/users/profile/1
+
+### 2. View Gateway Admin Status (Tracks active connection and health metrics)
+GET http://localhost:8080/_admin/status

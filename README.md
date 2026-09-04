@@ -55,7 +55,7 @@ make stop-all          # kill all running processes
 | pass_through     | basic dict routing | done   |
 | trie_routing     | radix-trie router  | done   |
 | load_balancing   | const hash + vnode | done   |
-| req_chanelling   | .............      | todo   |
+| req_chanelling   | bulkhead + single  | done   |
 | cache_layer      | .............      | todo   |
 | authentication   | .............      | todo   |
 | rate_limiting    | .............      | todo   |
